@@ -1,9 +1,18 @@
 const User = require('../schemas/user');
+const { validationResult } = require('express-validator')
 const { uid } = require('uid');
 const bcrypt = require('bcrypt');
 const HttpError = require('../http-error/http-error');
 
+
+// CREATE NEW USER
 const createUser = async (req, res, next) => {
+
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        return next( new HttpError("Invalid Input passed, please try again", 422))
+    }
+
 
     let { userName, userEmail, password } = req.body;
     let hashedPassword;
@@ -14,7 +23,7 @@ const createUser = async (req, res, next) => {
       userExists  = await User.findOne({userEmail});
 
         if(userExists){
-            const error =  new HttpError('Sorry a uswer with this email already exists!! please try again', 500);
+            const error =  new HttpError('Sorry a user with this email already exists!! please try again', 500);
             return next(error);
         }
 
@@ -36,19 +45,28 @@ const createUser = async (req, res, next) => {
                 userId: uid(),
                 userName,
                 userEmail,
-                password: hashedPassword
+                password: hashedPassword,
+                myAccounts: []
             })
 
             await newUser.save();
             res.json(newUser);
 
-        }catch(err){
+        } catch(err){
             const error =  new HttpError('An Error Has Occured', 500);
             return next(error);
     }
 }
 
+
+// USER SIGN IN
 const signIn = async (req, res, next) => {
+
+    const errors = validationResult(req);
+    if(!errors.isEmpty()) {
+        return next( new HttpError("Invalid Input passed, please try again", 422))
+    }
+
 
     let { userEmail, password } = req.body;
 
@@ -60,7 +78,7 @@ const signIn = async (req, res, next) => {
         if(!foundUser){
             const error =  new HttpError('No User Exists with this email, please sign up', 500);
             return next(error);
-        }else{
+        } else {
             const passwordMatch = await bcrypt.compare(password, foundUser.password);
             if(passwordMatch){
                 console.log('Success')
@@ -71,10 +89,22 @@ const signIn = async (req, res, next) => {
         }
 
         return res.json(foundUser)
+    } catch(err){
+        const error =  new HttpError('An Error Has Occured whilst tryung to log in, please try again', 500);
+        return next(error);
+    }
+}
+
+//TEMP DELETE ALL
+
+const deleteAllUsers = async (req, res, next) => {
+
+    try{
+        await User.deleteMany({}, console.log('All records deleted'))
     }catch(err){
         const error =  new HttpError('An Error Has Occured whilst tryung to log in, please try again', 500);
         return next(error);
     }
 }
 
-module.exports = { createUser, signIn };
+module.exports = { createUser, signIn, deleteAllUsers };
