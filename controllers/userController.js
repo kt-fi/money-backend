@@ -1,9 +1,9 @@
-const User = require('../schemas/user');
 const { validationResult } = require('express-validator')
 const { uid } = require('uid');
 const bcrypt = require('bcrypt');
-const HttpError = require('../http-error/http-error');
 
+const HttpError = require('../http-error/http-error');
+const User = require('../schemas/user');
 
 // CREATE NEW USER
 const createUser = async (req, res, next) => {
@@ -46,7 +46,7 @@ const createUser = async (req, res, next) => {
                 userName,
                 userEmail,
                 password: hashedPassword,
-                myAccounts: []
+                userAccounts: []
             })
 
             await newUser.save();
