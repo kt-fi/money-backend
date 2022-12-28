@@ -3,6 +3,8 @@ const cors = require('cors');
 const mongoose = require('mongoose');
 
 const userRouter = require('./routes/userRoutes')
+const sharedAccountRouter = require('./routes/houseAccountRoutes');
+const transactionRouter = require('./routes/transactionRoutes');
 
 // APP SETUP
 const app = express();
@@ -18,7 +20,9 @@ console.log('DB ONLINE'));
 
 // ROUTES
 
-app.use('/user', userRouter)
+app.use('/user', userRouter);
+app.use('/sharedAccount', sharedAccountRouter)<
+app.use('/transactions', transactionRouter)
 
 // START SERVER
 app.listen('3000', console.log('SERVER STARTED'))

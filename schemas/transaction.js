@@ -4,8 +4,8 @@ const schema = mongoose.Schema;
 
 const transaction = schema({
     transactionId: { type: String, require: true },
-    sharedAccountNumber:  { type: mongoose.Types.ObjectId, require: true, ref: 'HouseAccount' },
-    userId: { type: mongoose.Types.ObjectId, require: true, ref: 'User' },
+    accountId:  { type: String, require: true },
+    userId: { type: String, require: true },
     quantity: {  type: Number, require: true },
     paymentType: { type: String, require: true },
     concept:  { type: String, require: true },

@@ -10,6 +10,7 @@ const createUser = async (req, res, next) => {
 
     const errors = validationResult(req);
     if(!errors.isEmpty()) {
+        res.json(error.message)
         return next( new HttpError("Invalid Input passed, please try again", 422))
     }
 
@@ -24,7 +25,8 @@ const createUser = async (req, res, next) => {
 
         if(userExists){
             const error =  new HttpError('Sorry a user with this email already exists!! please try again', 500);
-            return next(error);
+            res.json(error.message)
+            return next(error );
         }
 
     }catch(err){
@@ -64,6 +66,7 @@ const signIn = async (req, res, next) => {
 
     const errors = validationResult(req);
     if(!errors.isEmpty()) {
+        res.json(error.message)
         return next( new HttpError("Invalid Input passed, please try again", 422))
     }
 
@@ -76,7 +79,8 @@ const signIn = async (req, res, next) => {
         foundUser = await User.findOne({userEmail});
 
         if(!foundUser){
-            const error =  new HttpError('No User Exists with this email, please sign up', 500);
+            const error =  new HttpError('No User Exists with this email, please sign up', 502);
+            res.json(error.message)
             return next(error);
         } else {
             const passwordMatch = await bcrypt.compare(password, foundUser.password);
@@ -84,7 +88,8 @@ const signIn = async (req, res, next) => {
                 console.log('Success')
             }else{
                 const error =  new HttpError('Password Incorrect please try again', 500);
-            return next(error);
+                res.json(error.message)
+                return next(error);
             }
         }
 

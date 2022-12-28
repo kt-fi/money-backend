@@ -9,8 +9,11 @@ const router = express.Router();
 router.post('/newUser', [check('userName').not().isEmpty().isLength({min:3}), check('userEmail').not().isEmpty().isEmail(), check('password').not().isEmpty().isLength({min:5})], userController.createUser);
 router.post('/login', userController.signIn);
 
+
+
 //TEMP
-router.delete('/deleteAll', userController.deleteAllUsers)
+router.delete('/deleteAll', userController.deleteAllUsers
+)
 
 
 module.exports = router;
