@@ -3,6 +3,7 @@ const { uid } = require('uid');
 const mongoose = require('mongoose');
 
 const SharedAccount = require('../schemas/sharedAccount');
+const SharedAccountUser = require('../schemas/sharedAccountUser');
 const User = require('../schemas/user');
 const Transaction = require('../schemas/transaction');
 
@@ -11,22 +12,51 @@ const HttpError = require('../http-error/http-error');
 
 // CREATE NEW TRANSACTION
 const newTransaction = async( req, res, next ) => {
-    
+
 const { accountId, userId, quantity, paymentType, concept } = req.body;
 
 let sharedAccount;
 let transaction;
+let userHouseAccount;
+let accountSpending = 0;
 
+// find home account user account
 try{
-    sharedAccount = await SharedAccount.findOne({accountId});
-}catch(err){
-    const error = new HttpError('error collecting shared account', 500);
-    return next(error)
+
+   sharedAccount = await SharedAccount.findOne({accountId}).populate({path: 'individualAccounts'})
+
+   if(sharedAccount){
+       sharedAccount.individualAccounts.forEach((account) => {
+         if(userId == account.userId){
+           userAccount = account
+           return;
+         }
+       });
+      
+   }else{
+       const error =  new HttpError('An Error Finding userAccount', 500);
+       return next(error);
+   }
+
+   try{
+    userHouseAccount = await SharedAccountUser.findOne({userId, accountId}).populate({path: 'transactions'})
+      
+   }catch(err){
+    const error =  new HttpError('An Error Finding userAccount Transactions', 500);
+    return next(error);
+   }
+   
+}catch(err){   
+     console.log(err)
+     const error = new HttpError('Failed to find user bank account', 500);
+     return next(error)
 }
 
-try{
+accountSpending = calculateTotalBalance(sharedAccount, userHouseAccount, quantity)
+// create and add transaction to user account
 
-transaction = new Transaction({
+try{
+    transaction = new Transaction({
     transactionId: uid(),
     accountId,
     userId,
@@ -40,23 +70,22 @@ transaction = new Transaction({
         let sess = await mongoose.startSession();
         await sess.startTransaction();
         await transaction.save({session:sess});
-        await sharedAccount.transactions.push(transaction);
-        await sharedAccount.save({session:sess});
+        await userHouseAccount.transactions.push(transaction);
+        await userHouseAccount.set({balance: accountSpending.accountSpending});
+        await userHouseAccount.save({session:sess});
         await sess.commitTransaction();
     }catch(err){
-        const error = new HttpError('transaction error', 500);
+        const error = new HttpError('error saving sessions', 500);
         return next(error)
     }
 
-
 }catch(err){
-    
+    console.log(err)
     const error = new HttpError('transaction error', 500);
     return next(error)
 }
 
-res.json({transaction, sharedAccount})
-
+res.json(transaction)
 }
 
 
@@ -95,7 +124,6 @@ const getAllAccountTransactions = async ( req, res, next ) =>{
 
     let userTotalSpent = 0;
     let accountTotalSpent = 0;
-    let plusMinus;
     let balance;
 
     userTransactions.forEach(transaction => {
@@ -107,30 +135,112 @@ const getAllAccountTransactions = async ( req, res, next ) =>{
     });
 
     //ACCOUNT USERS AMOUNT
+res.json(accountTransactions)
 
-    let accountUsersCount;
-
-    try{
-        accountUsersCount = await SharedAccount.findOne({accountId});
-        accountUsersCount = accountUsersCount.accountMembers.length;
-    }catch(err){
-        const error = new HttpError('error getting amount of account users', 500);
-        return next(error)
-    }
-    
-    
-
-    plusMinus = accountTotalSpent  - userTotalSpent;
-    balance = plusMinus - userTotalSpent;
-
-    console.log(plusMinus)
-    res.json({
-        "Account Users": accountUsersCount,
-        "Total Account Spending": accountTotalSpent,
-        "You Have Spent": userTotalSpent,
-        "Your House Balance": balance,
-        
-    })
 }
 
-module.exports = { newTransaction, getAllAccountTransactions }
+
+// DELETE TRANSACTION BY ID
+
+const deleteTransactionById = async ( req, res, next ) => {
+
+    const transactionId = req.params.transactionId;
+    const userId = req.params.userId;
+    const sharedAccountId = req.params.sharedAccountId;
+
+    let sharedAccount;
+    let userAccount;
+    let transaction;
+
+    let newBalance;
+
+
+    try{
+
+        sharedAccount = await SharedAccount.findOne({sharedAccountId}).populate({path: 'individualAccounts'})
+
+        if(sharedAccount){
+            sharedAccount.individualAccounts.forEach((account) => {
+              if(userId == account.userId){
+                userAccount = account
+
+                return;
+              }
+            });
+           
+        }else{
+            const error =  new HttpError('An Error Finding userAccount', 500);
+            return next(error);
+        }
+
+        
+
+    }catch(err){
+        console.log(err)
+        const error =  new HttpError('An Error Finding User Account', 500);
+        return next(error);
+    }
+
+    
+
+    // GET TRANSACTION
+    try{
+        transaction = await Transaction.findOne({transactionId});
+        newBalance = userAccount.balance - transaction.quantity;
+
+    }catch(err){
+        const error =  new HttpError('An Error Finding TRANSACTION', 500);
+            return next(error);
+    }
+
+
+    try{   
+        let transactions;
+        //HERE ------------------------------------
+        let sess = await mongoose.startSession();
+        await sess.startTransaction();
+        await transaction.remove({session:sess});
+        await userAccount.transactions.pull(transaction);
+        await userAccount.set({balance: newBalance})
+        await userAccount.save({session:sess});
+        await sess.commitTransaction();
+
+    }catch(err){
+        console.log(err)
+        const error =  new HttpError('An Error Deleting Transaction', 500);
+        return next(error);
+    }
+res.send('DELETED TRANSACTION')
+  
+}
+
+
+
+const deleteAllTransactions = async (req, res, next) => {
+
+    try{
+        await Transaction.deleteMany({}, console.log('All records deleted'))
+    }catch(err){
+        const error =  new HttpError('An Error Has Occured whilst tryung to log in, please try again', 500);
+        return next(error);
+    }
+}
+
+
+
+const calculateTotalBalance = (sharedAccount, userHouseAccount, quantity) => {
+    let accountSpending = 0;
+    if(userHouseAccount.transactions.length !== 0){
+        userHouseAccount.transactions.forEach((transaction) => {
+        accountSpending += transaction.quantity;
+    })
+    
+    accountSpending += parseInt(quantity);
+
+    }
+
+
+    return {accountSpending};
+}
+
+module.exports = { newTransaction, getAllAccountTransactions, deleteTransactionById, deleteAllTransactions }
