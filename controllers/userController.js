@@ -4,6 +4,7 @@ const bcrypt = require('bcrypt');
 
 const HttpError = require('../http-error/http-error');
 const User = require('../schemas/user');
+const SharedAccount = require('../schemas/sharedAccount')
 
 // CREATE NEW USER
 const createUser = async (req, res, next) => {
@@ -70,13 +71,11 @@ const signIn = async (req, res, next) => {
         return next( new HttpError("Invalid Input passed, please try again", 422))
     }
 
-
     let { userEmail, password } = req.body;
-
     let foundUser;
 
     try {
-        foundUser = await User.findOne({userEmail});
+        foundUser = await User.findOne({userEmail}).populate({path: 'userAccounts'});
 
         if(!foundUser){
             const error =  new HttpError('No User Exists with this email, please sign up', 502);

@@ -7,7 +7,7 @@ const user = schema({
     userName:  { type: String, require: true },
     userEmail:  { type: String, require: true },
     password: { type: String, require: true },
-    userAccounts: [{ type: mongoose.Types.ObjectId, requre: false, ref: 'sharedAccount'}]
+    userAccounts: [{ type: mongoose.Types.ObjectId, requre: false, ref: 'SharedAccount'}]
 })
 
 module.exports =  mongoose.model('User', user)

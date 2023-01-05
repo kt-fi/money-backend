@@ -47,7 +47,6 @@ try{
    }
    
 }catch(err){   
-     console.log(err)
      const error = new HttpError('Failed to find user bank account', 500);
      return next(error)
 }
@@ -63,7 +62,7 @@ try{
     quantity,
     paymentType,
     concept,
-    date: new Date()
+    date: getCurrentDate()
 })
 
     try{
@@ -80,7 +79,6 @@ try{
     }
 
 }catch(err){
-    console.log(err)
     const error = new HttpError('transaction error', 500);
     return next(error)
 }
@@ -94,11 +92,8 @@ const getAllAccountTransactions = async ( req, res, next ) =>{
 
     const userId = req.params.userId;
     const  accountId  = req.params.accountId;
-
     let accountTransactions;
-
     let userTransactions = [];
-    let totalTransactions;
   
     let options = {
         path: 'transactions',
@@ -124,7 +119,6 @@ const getAllAccountTransactions = async ( req, res, next ) =>{
 
     let userTotalSpent = 0;
     let accountTotalSpent = 0;
-    let balance;
 
     userTransactions.forEach(transaction => {
         userTotalSpent += transaction.quantity;
@@ -151,19 +145,15 @@ const deleteTransactionById = async ( req, res, next ) => {
     let sharedAccount;
     let userAccount;
     let transaction;
-
     let newBalance;
 
-
     try{
-
-        sharedAccount = await SharedAccount.findOne({sharedAccountId}).populate({path: 'individualAccounts'})
+        sharedAccount = await SharedAccount.findOne({accountId:sharedAccountId}).populate({path: 'individualAccounts'})
 
         if(sharedAccount){
             sharedAccount.individualAccounts.forEach((account) => {
               if(userId == account.userId){
                 userAccount = account
-
                 return;
               }
             });
@@ -172,16 +162,10 @@ const deleteTransactionById = async ( req, res, next ) => {
             const error =  new HttpError('An Error Finding userAccount', 500);
             return next(error);
         }
-
-        
-
     }catch(err){
-        console.log(err)
         const error =  new HttpError('An Error Finding User Account', 500);
         return next(error);
     }
-
-    
 
     // GET TRANSACTION
     try{
@@ -193,10 +177,7 @@ const deleteTransactionById = async ( req, res, next ) => {
             return next(error);
     }
 
-
     try{   
-        let transactions;
-        //HERE ------------------------------------
         let sess = await mongoose.startSession();
         await sess.startTransaction();
         await transaction.remove({session:sess});
@@ -206,12 +187,11 @@ const deleteTransactionById = async ( req, res, next ) => {
         await sess.commitTransaction();
 
     }catch(err){
-        console.log(err)
+
         const error =  new HttpError('An Error Deleting Transaction', 500);
         return next(error);
     }
-res.send('DELETED TRANSACTION')
-  
+res.json({'msg': 'DELETED TRANSACTION'})
 }
 
 
@@ -230,17 +210,23 @@ const deleteAllTransactions = async (req, res, next) => {
 
 const calculateTotalBalance = (sharedAccount, userHouseAccount, quantity) => {
     let accountSpending = 0;
-    if(userHouseAccount.transactions.length !== 0){
+  
         userHouseAccount.transactions.forEach((transaction) => {
         accountSpending += transaction.quantity;
     })
     
     accountSpending += parseInt(quantity);
-
-    }
-
-
+    
     return {accountSpending};
+}
+
+
+const getCurrentDate = () => {
+    let day = new Date().getDate();
+    let month = new Date().getMonth();
+    let year = new Date().getFullYear();
+
+    return `${day}/${month + 1}/${year}`
 }
 
 module.exports = { newTransaction, getAllAccountTransactions, deleteTransactionById, deleteAllTransactions }

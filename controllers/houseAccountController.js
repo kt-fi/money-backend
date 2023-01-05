@@ -44,7 +44,6 @@ createNewHouseAccount = async ( req, res, next ) => {
 
     }catch(err){
         const error = new HttpError('failed to add user account to shared account', 500);
-        console.log(err)
         return next(error);
     }
 
@@ -60,16 +59,13 @@ createNewHouseAccount = async ( req, res, next ) => {
             await sess.commitTransaction();
         }catch(err){
             const error = new HttpError('Add User To Account Failed', 500);
-            console.log(err)
             return next(error);
     }
         
-
     }catch(err){
         const error = new HttpError('Create Account Failed', 500);
         return next(error);
     }
-
     res.json(newAccount)
 }   
 
@@ -103,7 +99,6 @@ addUserToAccount = async( req, res, next ) => {
 
     }catch(err){
         const error = new HttpError('failed to add user account to shared account', 500);
-        console.log(err)
         return next(error);
     }
 
@@ -119,10 +114,8 @@ addUserToAccount = async( req, res, next ) => {
         await sess.commitTransaction();
     }catch(err){
         const error = new HttpError('Add User To Account Failed', 500);
-        console.log(err)
         return next(error);
 }
-
     res.json({userAccount, sharedAccount})
 }
 
@@ -136,15 +129,14 @@ try{
     let account = await SharedAccount.findOne({accountId}).populate({path: 'accountMembers'});
 
     account.accountMembers.map(member =>{
-        users.push(member.userName)
+        users.push({'userName': member.userName, 'userId': member.userId, 'accountId': accountId})
     })
+
 }catch(err){
     const error =  new HttpError('An Error Has Occured getting account users', 500);
     return next(error);
 }
-
-res.json({'Members': users})
-
+res.json({'members': users})
 }
 
 const getUserTransactions = async (req, res, next) => {
@@ -156,10 +148,10 @@ const getUserTransactions = async (req, res, next) => {
 
         userTransactions =  await SharedAccountUser.findOne({accountId, userId}).populate({path: 'transactions'});
         foundUser = await User.findOne({userId})
+        userTransactions.transactions.reverse()
         res.json({'name': foundUser.userName, 'transactions': userTransactions.transactions})
 
     }catch(err){
-        console.log(err)
         const error =  new HttpError('Could not get user Transactions', 500);
         return next(error);
     }
@@ -179,7 +171,6 @@ const getTotalUserBalance = async (req, res, next) => {
         account = await SharedAccount.findOne({accountId}).populate({path: 'individualAccounts'});
 
         account.individualAccounts.forEach(account => {
-            console.log(account)
              account.userId == userId ? user = account : null;
         });
 
@@ -189,7 +180,7 @@ const getTotalUserBalance = async (req, res, next) => {
             })
             
              userBalance = (accountBalance/account.individualAccounts.length) - user.balance;
-             res.json({'userBalance':userBalance})
+             res.json({'userBalance':userBalance, 'userTotalSpent': user.balance, 'totalAccountBalance': accountBalance})
         }catch(err){
           
             const error =  new HttpError('An Error Has Occured 11', 500);
@@ -197,11 +188,9 @@ const getTotalUserBalance = async (req, res, next) => {
         }
 
     }catch(err){     
-         console.log(err)
         const error =  new HttpError('An Error Has Occured getting balance', 500);
         return next(error);
     }
-
 }
 
 const deleteAllAccounts = async (req, res, next) => {
