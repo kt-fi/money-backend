@@ -165,7 +165,7 @@ const getTotalUserBalance = async (req, res, next) => {
     let user;
 
     let userBalance;
-    let accountBalance;
+    let accountBalance = 0;
 
     try{
         account = await SharedAccount.findOne({accountId}).populate({path: 'individualAccounts'});
@@ -175,9 +175,14 @@ const getTotalUserBalance = async (req, res, next) => {
         });
 
         try{
-          accountBalance = account.individualAccounts.reduce((a,b)=>{
-              return a.balance + b.balance;
-            })
+        //   accountBalance = account.individualAccounts.reduce((a,b)=>{
+        //       return a.balance + b.balance, 0;
+            // })
+
+            for(let i = 0; i < account.individualAccounts.length; 0, i++){
+                accountBalance += account.individualAccounts[i].balance;
+                console.log(accountBalance)
+            }
             
              userBalance = (accountBalance/account.individualAccounts.length) - user.balance;
              res.json({'userBalance':userBalance, 'userTotalSpent': user.balance, 'totalAccountBalance': accountBalance})

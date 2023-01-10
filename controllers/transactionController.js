@@ -182,7 +182,7 @@ const deleteTransactionById = async ( req, res, next ) => {
         await sess.startTransaction();
         await transaction.remove({session:sess});
         await userAccount.transactions.pull(transaction);
-        await userAccount.set({balance: newBalance})
+        await userAccount.set({balance: newBalance});
         await userAccount.save({session:sess});
         await sess.commitTransaction();
 
@@ -215,7 +215,7 @@ const calculateTotalBalance = (sharedAccount, userHouseAccount, quantity) => {
         accountSpending += transaction.quantity;
     })
     
-    accountSpending += parseInt(quantity);
+    accountSpending += parseFloat(quantity);
     
     return {accountSpending};
 }
