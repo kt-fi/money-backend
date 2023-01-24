@@ -136,7 +136,7 @@ try{
     const error =  new HttpError('An Error Has Occured getting account users', 500);
     return next(error);
 }
-res.json({'members': users})
+res.json(users)
 }
 
 const getUserTransactions = async (req, res, next) => {
