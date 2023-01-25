@@ -49,7 +49,8 @@ const createUser = async (req, res, next) => {
                 userName,
                 userEmail,
                 password: hashedPassword,
-                userAccounts: []
+                userAccounts: [],
+                invitations: []
             })
 
             await newUser.save();
@@ -99,6 +100,24 @@ const signIn = async (req, res, next) => {
     }
 }
 
+
+const getNotifications = async ( req, res, next ) => {
+
+    let userId  = req.params.userId;
+
+    let foundUser;
+
+    try {
+        foundUser = await User.findOne({userId}).populate({path: 'invitations'});
+
+        res.json(foundUser.invitations)
+    } catch(err) {
+        const error =  new HttpError('Unable to retreive notifications', 500);
+        return next(error);
+    }
+
+}
+
 //TEMP DELETE ALL
 
 const deleteAllUsers = async (req, res, next) => {
@@ -111,4 +130,4 @@ const deleteAllUsers = async (req, res, next) => {
     }
 }
 
-module.exports = { createUser, signIn, deleteAllUsers };
+module.exports = { createUser, signIn, getNotifications, deleteAllUsers };

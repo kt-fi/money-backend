@@ -17,8 +17,13 @@ app.use(express.json())
 
 // MONGOOSE SETUP
 mongoose.set('strictQuery', true)
-mongoose.connect(`mongodb+srv://${process.env.MONGODB}:${process.env.MONGOPWD}@cluster0.02npzs8.mongodb.net/?retryWrites=true&w=majority`,
+// mongoose.connect(`mongodb+srv://${process.env.MONGODB}:${process.env.MONGOPWD}@cluster0.02npzs8.mongodb.net/?retryWrites=true&w=majority`,
+// console.log('DB ONLINE'));
+
+//TEST
+mongoose.connect(`mongodb+srv://ktAdmin:moneyapptest@cluster0.jcvwtfz.mongodb.net/?retryWrites=true&w=majority`,
 console.log('DB ONLINE'));
+
 
 // ROUTES
 

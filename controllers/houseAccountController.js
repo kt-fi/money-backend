@@ -69,6 +69,46 @@ createNewHouseAccount = async ( req, res, next ) => {
     res.json(newAccount)
 }   
 
+
+inviteUsersToAccount = async ( req, res, next ) => {
+
+    let { accountId, users } = req.body;
+
+    let foundAccount;
+
+    try{
+        foundAccount = await SharedAccount.findOne({accountId});
+        console.log(foundAccount)
+    }catch(err){
+        console.log(err)
+        const error = new HttpError('Unable to find account', 500);
+        return next(error);
+    }
+
+    try{
+        let userFound;
+
+        for(let user of users) {
+            userFound = await User.findOne({'userEmail': user});
+console.log(userFound)
+            let sess = await mongoose.startSession();
+            await sess.startTransaction();
+            await userFound.invitations.push(foundAccount);
+            await userFound.save();
+            await sess.commitTransaction();
+
+            
+        }
+
+    }catch(err){
+        const error = new HttpError('Unable to invite users', 500);
+        return next(error);
+    }
+
+   
+
+}
+
 addUserToAccount = async( req, res, next ) => {
     
     const { accountId, userId } = req.body;
@@ -106,6 +146,7 @@ addUserToAccount = async( req, res, next ) => {
         let sess = await mongoose.startSession();
         await sess.startTransaction();
         await userAccount.userAccounts.push(sharedAccount);
+        await userAccount.invitations.pull(sharedAccount)
         await userAccount.save();
         await sharedAccountUser.save();
         await sharedAccount.individualAccounts.push(sharedAccountUser)
@@ -137,6 +178,29 @@ try{
     return next(error);
 }
 res.json(users)
+}
+
+const getAllUserAccounts = async ( req, res, next ) => {
+
+    let userId = req.params.userId;
+
+    let foundUser;
+
+    try {
+
+        foundUser = await User.findOne({userId}).populate({path: 'userAccounts'});
+
+        if(!foundUser) {
+           return res.json({'msg': 'Unable to collect user accounts.'})
+        }
+
+        res.json(foundUser.userAccounts)
+
+    } catch(err) {
+        const error =  new HttpError('Unable to get user Accounts', 500);
+        return next(error);
+    }
+
 }
 
 const getUserTransactions = async (req, res, next) => {
@@ -208,4 +272,26 @@ const deleteAllAccounts = async (req, res, next) => {
     }
 }
 
-module.exports = { createNewHouseAccount, addUserToAccount, getAccountUsers, getUserTransactions, getTotalUserBalance, deleteAllAccounts }
+//TEMP DELETE ALL
+
+const deleteAllSharedAccounts = async (req, res, next) => {
+
+    try{
+        await SharedAccountUser.deleteMany({}, console.log('All records deleted'))
+    }catch(err){
+        const error =  new HttpError('An Error Has Occured whilst tryung to log in, please try again', 500);
+        return next(error);
+    }
+}
+
+module.exports = { 
+    createNewHouseAccount, 
+    inviteUsersToAccount, 
+    addUserToAccount, 
+    getAllUserAccounts, 
+    getAccountUsers, 
+    getUserTransactions, 
+    getTotalUserBalance,
+     deleteAllAccounts,
+     deleteAllSharedAccounts
+    }

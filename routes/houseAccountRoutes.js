@@ -6,11 +6,15 @@ const router = express.Router();
 
 router.post('/newHouseAccount', houseAccountController.createNewHouseAccount);
 router.post('/addUserToAccount', houseAccountController.addUserToAccount);
+router.get('/getAllUserAccounts/:userId', houseAccountController.getAllUserAccounts);
 
-router.get('/getUserBalance/:userId/:accountId', houseAccountController.getTotalUserBalance)
+router.get('/getUserBalance/:userId/:accountId', houseAccountController.getTotalUserBalance);
 router.get('/getAccountUsers/:accountId', houseAccountController.getAccountUsers);
-router.get('/getUserTransactions/:userId/:accountId', houseAccountController.getUserTransactions)
+router.get('/getUserTransactions/:userId/:accountId', houseAccountController.getUserTransactions);
+
+router.post('/inviteUsers', houseAccountController.inviteUsersToAccount)
 
 router.delete('/deleteAll', houseAccountController.deleteAllAccounts);
+router.delete('/deleteAllShared', houseAccountController.deleteAllSharedAccounts);
 
 module.exports = router;
