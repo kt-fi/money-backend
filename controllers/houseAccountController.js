@@ -5,8 +5,10 @@ const mongoose = require('mongoose');
 const SharedAccount = require('../schemas/sharedAccount');
 const SharedAccountUser = require('../schemas/sharedAccountUser');
 const User = require('../schemas/user');
+const Transaction = require('../schemas/transaction');
 
 const HttpError = require('../http-error/http-error');
+
 
 
 // CREATE NEW SHARED ACCOUNT
@@ -115,6 +117,7 @@ addUserToAccount = async( req, res, next ) => {
 
     let userAccount;
     let sharedAccount;
+    let sharedAccountUser;
 
     // get user and shared accounts
     try{
@@ -272,6 +275,105 @@ const deleteAllAccounts = async (req, res, next) => {
     }
 }
 
+// REMOVE USER FROM ACCOUNT
+
+const removeUserFromAccount = async ( req, res, next ) => {
+
+    /*
+    Remove Transactions for Account,    -- Loop all User Transactions relating to specified account and remove;
+    Remove Account from user accounts array  -- Remove shared account from user accounts array;
+    Remove Individual Account -- Delete Account;
+    Remove User From Shared Account 
+    Remove Useer Individual account from shared Account Array
+    */ 
+
+    let { userId, accountId } = req.params;
+
+    let foundUser;
+    let foundSharedAccount;
+    let foundSharedAccountUser;
+
+
+    try {
+
+        foundUser = await User.findOne({userId});
+
+        if(!foundUser){
+            const error =  new HttpError('Failed To Find USER', 500);
+            return next(error);
+        }
+       
+        foundSharedAccount = await SharedAccount.findOne({accountId});
+
+        if(!foundSharedAccount) {
+            const error =  new HttpError('Failed To Find Shared Account', 500);
+            return next(error);
+        }
+
+        foundSharedAccountUser = await SharedAccountUser.findOne({'userId': userId, 'accountId':accountId}).populate({path: 'transactions'})
+
+        if(!foundSharedAccountUser) {
+            console.log(err)
+             const error =  new HttpError('Failed To Find SharedUserAccount', 500);
+           return next(error);
+        }
+
+        try {
+                await Transaction.deleteMany({userId, accountId})
+        }catch(err) {
+            const error =  new HttpError('Failed To DELETE TRANSACTIONS', 500);
+            return next(error);
+        }
+
+        try {
+
+            let sess = await mongoose.startSession();
+            await sess.startTransaction();
+            // REMOVE ACCOUNT FROM USER ACCOUNTS LIST
+            await foundUser.userAccounts.pull(foundSharedAccount);
+            await foundUser.save();
+            // REMOVE INDIVIDUALS ACCOUNT 
+            await SharedAccountUser.findOneAndRemove({'userId': userId, 'accountId':accountId})
+            // REMOVE USER FROM SHARED ACCOUNT ARRAY
+            await foundSharedAccount.accountMembers.pull(foundUser)
+            // REMOVE USER ACCOUNT FROM SHARED ACCOUNT ARRAY
+            await foundSharedAccount.individualAccounts.pull(foundSharedAccountUser);
+            await foundSharedAccount.save({session:sess});
+            await sess.commitTransaction();
+
+        }catch(err) {
+            console.log(err)
+            const error =  new HttpError('ERROR REMOVING DATA UNRESOLVED', 500);
+            return next(error);
+        }
+
+    }catch(err) {
+        console.log(err)
+        const error =  new HttpError('ERROR', 500);
+        return next(error);
+    }
+
+     res.send('?SUCCESS')
+}
+
+
+//DELETE ENTIRE ACCOUNT
+
+const deleteSharedAccountById = async (req, res, next) => {
+
+    let accountId = req.params.accountId;
+
+    try {
+
+
+
+    }catch(err) {
+        const error =  new HttpError('Unable to delete Account, please try again', 500);
+        return next(error);
+    }
+
+}
+
 //TEMP DELETE ALL
 
 const deleteAllSharedAccounts = async (req, res, next) => {
@@ -292,6 +394,8 @@ module.exports = {
     getAccountUsers, 
     getUserTransactions, 
     getTotalUserBalance,
+    removeUserFromAccount,
      deleteAllAccounts,
+     deleteSharedAccountById,
      deleteAllSharedAccounts
     }

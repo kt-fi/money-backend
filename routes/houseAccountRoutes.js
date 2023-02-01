@@ -12,7 +12,10 @@ router.get('/getUserBalance/:userId/:accountId', houseAccountController.getTotal
 router.get('/getAccountUsers/:accountId', houseAccountController.getAccountUsers);
 router.get('/getUserTransactions/:userId/:accountId', houseAccountController.getUserTransactions);
 
-router.post('/inviteUsers', houseAccountController.inviteUsersToAccount)
+router.post('/inviteUsers', houseAccountController.inviteUsersToAccount);
+
+router.delete('/removeUserFromAccount/:userId/:accountId', houseAccountController.removeUserFromAccount);
+router.delete('/deleteSharedAccountById/:accountId', houseAccountController.deleteSharedAccountById);
 
 router.delete('/deleteAll', houseAccountController.deleteAllAccounts);
 router.delete('/deleteAllShared', houseAccountController.deleteAllSharedAccounts);
