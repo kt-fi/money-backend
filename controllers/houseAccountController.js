@@ -252,7 +252,7 @@ const getTotalUserBalance = async (req, res, next) => {
             }
             
              userBalance = (accountBalance/account.individualAccounts.length) - user.balance;
-             res.json({'userBalance':userBalance, 'userTotalSpent': user.balance, 'totalAccountBalance': accountBalance})
+             res.json({'userBalance':userBalance, 'userTotalSpent': user.balance, 'totalAccountBalance': accountBalance, 'accountName': account.accountName})
         }catch(err){
           
             const error =  new HttpError('An Error Has Occured 11', 500);
