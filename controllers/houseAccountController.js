@@ -313,7 +313,6 @@ const removeUserFromAccount = async ( req, res, next ) => {
         foundSharedAccountUser = await SharedAccountUser.findOne({'userId': userId, 'accountId':accountId}).populate({path: 'transactions'})
 
         if(!foundSharedAccountUser) {
-            console.log(err)
              const error =  new HttpError('Failed To Find SharedUserAccount', 500);
            return next(error);
         }
@@ -353,7 +352,7 @@ const removeUserFromAccount = async ( req, res, next ) => {
         return next(error);
     }
 
-     res.send('?SUCCESS')
+     res.json({'msg':'Done'})
 }
 
 
